@@ -56,7 +56,7 @@ void basic_enemies_obstacle_collision(Obstacle obstacle, Enemy *enemy) {
 //calcula a colisão um robô um obstáculo
 void robots_obstacle_collision(Obstacle obstacle, Robot *robot) {
     if(robot->shooted || obstacle.coordenates.x1 > 2*SCREEN_W) return;
-    if(robot->coordenates.x2 > (SCREEN_H - FLOOR_HEIGHT) || rectangular_collision(robot->coordenates, obstacle.coordenates)) {
+    if(robot->coordenates.y2 > (SCREEN_H - FLOOR_HEIGHT) || rectangular_collision(robot->coordenates, obstacle.coordenates)) {
         robot->shooted = 1;
     }
 }

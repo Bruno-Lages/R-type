@@ -9,7 +9,7 @@ int ENEMIES_SPEED = 2;
 //configura inimigos
 void init_enemy(Enemy *enemy, int enemy_type) {
     enemy->coordenates.radius = BASIC_ENEMY_RADIUS;
-    enemy->coordenates.x1 = SCREEN_W + rand() % SCREEN_W*2;
+    enemy->coordenates.x1 = SCREEN_W + rand() % SCREEN_W*1;
     enemy->wave_origin = SCREEN_H/2 +  sin(rand() % 7)*(int)(SCREEN_H/3 - enemy->coordenates.radius*2);
     enemy->coordenates.y1 = enemy->wave_origin;
     enemy->speed = ENEMIES_SPEED;
@@ -228,13 +228,14 @@ void init_cannon(Cannon *cannon, Obstacle wall) {
 //atualiza a posição dos tiros e sua coordenada
 void update_cannon(Cannon *cannon, Obstacle wall, Spaceship spaceship, int shot_time, ALLEGRO_SAMPLE *sfx) {
     if(cannon->coordenates.x2 <= 0) cannon->shooted = 1;
+    if(cannon->coordenates.x1 < wall.coordenates.x1 || cannon->coordenates.x2 > wall.coordenates.x2) init_cannon(cannon, wall);
 
         cannon->coordenates.x1 -= 1;
         cannon->coordenates.x2 -= 1;
 
     for(int i = 0; i < CANNON_TOTAL_SHOTS; i++) {
 
-        if(spaceship.y > cannon->coordenates.y2 && spaceship.x < cannon->coordenates.x1 && cannon->coordenates.x1 < SCREEN_H*1.2 && !cannon->shot[i].shooted && shot_time && !cannon->shooted) {
+        if(spaceship.y > cannon->coordenates.y2 && spaceship.x < cannon->coordenates.x1 && cannon->coordenates.x1 < SCREEN_H*1.3 && !cannon->shot[i].shooted && shot_time && !cannon->shooted) {
             al_play_sample(sfx,0.4, 0, 1.0, ALLEGRO_PLAYMODE_ONCE, 0);
             enemy_shoot_out(&cannon->shot[i], spaceship, cannon->coordenates.x1, cannon->coordenates.y2, ENEMIES_SPEED);
             break;

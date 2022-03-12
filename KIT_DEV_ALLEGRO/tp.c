@@ -108,6 +108,8 @@ int main() {
 
     //cria uma tela com dimensoes de SCREEN_W, SCREEN_H pixels
 	display = al_create_display(SCREEN_W, SCREEN_H);
+    al_set_window_position(display, 50, 50);
+    al_set_window_title(display, "R-type");
 	if(!display) {
 		fprintf(stderr, "failed to create display!\n");
 		return -1;
@@ -123,7 +125,8 @@ int main() {
     ALLEGRO_BITMAP *heart = al_load_bitmap("assets/sprites/life.png");
     ALLEGRO_BITMAP *gasoline_sprite = al_load_bitmap("assets/sprites/gasoline.png");
     ALLEGRO_BITMAP *screwdriver_sprite = al_load_bitmap("assets/sprites/screwdriver.png");
-    ALLEGRO_BITMAP *spaceship_sprite = al_load_bitmap("assets/sprites/spaceship/spaceship-sprite.png");
+    ALLEGRO_BITMAP *spaceship1_sprite = al_load_bitmap("assets/sprites/spaceship/spaceship-sprite.png");
+    ALLEGRO_BITMAP *spaceship2_sprite = al_load_bitmap("assets/sprites/spaceship/spaceship-sprite3.png");
     ALLEGRO_BITMAP *shot_sprite = al_load_bitmap("assets/sprites/shot/shot.png");
     ALLEGRO_BITMAP *rshot_sprite = al_load_bitmap("assets/sprites/shot/rshot.png");
     ALLEGRO_BITMAP *supershot_sprite = al_load_bitmap("assets/sprites/supershot/supershot.png");
@@ -232,10 +235,8 @@ int main() {
     }
 
     //inicia a parede
-    Obstacle wall[2];
-    for(int i = 0; i < 2; ++i) {
-        init_wall(&wall[i]);
-    }
+    Obstacle wall;
+    init_wall(&wall);
 
     //inicia o chão
     Obstacle floor[TOTAL_FLOOR_SPLITS];
@@ -270,7 +271,7 @@ int main() {
     }
 
     Cannon cannon;
-    init_cannon(&cannon, wall[rand() % 2]);
+    init_cannon(&cannon, wall);
 
     // toca a instância
     al_play_sample_instance(songInstance);
@@ -306,6 +307,7 @@ int main() {
     while(spaceship[0].lifes > 0 || spaceship[1].lifes > 0) {
 
         if(!spaceship[0].lifes && !multiplayer) spaceship[1].lifes = 0;
+        if(!spaceship[1].lifes && spaceship[0].lifes) multiplayer = 0;
 
         ALLEGRO_EVENT ev;
         //espera por um evento e o armazena na variavel de evento ev
@@ -332,6 +334,11 @@ int main() {
                     //altera a quantidade de inimigos
                     ENEMIES_ALIVE = TOTAL_ENEMIES - ((int)(0.7*TOTAL_ENEMIES) /(score*pow(10, -GAME_DIFFICULTY) + 1));
 
+                    int target_spaceship;
+                    if(spaceship[0].lifes && !spaceship[1].lifes) target_spaceship = 0;
+                    else if(!spaceship[0].lifes && spaceship[1].lifes) target_spaceship = 1;
+                    else if(!multiplayer) target_spaceship = 0;
+                    else target_spaceship = rand() % 2;
 
                     if(pause) {
                         al_flip_display();
@@ -363,20 +370,13 @@ int main() {
                     //===================================Obstáculos===================================
 
                     //atualiza a posição da parede
-                    for(int i = 0; i < 2; ++i) {
-                        update_wall(&wall[i]);
-                    }
+                    update_wall(&wall);
 
                     //atualiza o chão
                     update_floor(floor);
-
-                    //colisão de paredes
-                    obstacles_collision(&wall[0], &wall[1]);
     
                     // adiciona a parede
-                    for(int i = 0; i < 2; ++i) {
-                        draw_wall(wall[i], wall_sprite);
-                    }
+                    draw_wall(wall, wall_sprite);
 
                     // adiciona o chão
                     draw_floor(floor, floor_sprite);
@@ -385,16 +385,14 @@ int main() {
                     
                     // desenha a nave
                     for(int i = 0; i < TOTAL_SPACESHIPS; ++i) {
-                        draw_spaceship(&spaceship[i], spaceship_sprite);
+                        draw_spaceship(&spaceship[i], ( i ? spaceship2_sprite : spaceship1_sprite));
                         update_spaceship(&spaceship[i]);
                     }
     
                     // observa colisões da nave com obstáculos
                     for(int i = 0; i < TOTAL_SPACESHIPS; ++i) {
                         spaceship_obstacle_collision(floor[0], &spaceship[i]);
-                        for(int j = 0; j < 2; j++) {
-                            spaceship_obstacle_collision(wall[j], &spaceship[i]);
-                        }
+                        spaceship_obstacle_collision(wall, &spaceship[i]);
                     }
     
                     //===========================================tiros==========================================
@@ -405,10 +403,8 @@ int main() {
                             if(shot[h][i].shooted) {
                                 //colisões com chão e parede
                                 shot_obstacle_collision(floor[0], &shot[h][i]);
-                                for(int j = 0; j < 2; j++) {
-                                    shot_obstacle_collision(wall[j], &shot[h][i]);
-                                }
-    
+                                shot_obstacle_collision(wall, &shot[h][i]);
+                                
                                 //colisões com inimigos simples
                                 for(int j = 0; j < ENEMIES_ALIVE; j++) {
                                     shot_basic_enemy_collision(&shot[h][i], &enemy[j], &score);
@@ -452,9 +448,7 @@ int main() {
                         if(supershot[h].shooted) {
                             //colisões com obstáculos
                             // supershot_obstacle_collision(floor[0], &supershot);
-                            for(int i = 0; i < 2; i++) {
-                                supershot_obstacle_collision(wall[i], &supershot[h]);
-                            }
+                            supershot_obstacle_collision(wall, &supershot[h]);
     
                             //colisões dos inimigos simples, robôs e seus tiros
                             for(int i = 0; i < ENEMIES_ALIVE; i++) {
@@ -506,9 +500,7 @@ int main() {
                     for(int i = 0; i < ENEMIES_ALIVE; i++) {
                             
                         //colisões com obstáculos
-                        for(int j = 0; j < 2; ++j) {
-                            basic_enemies_obstacle_collision(wall[j], &enemy[i]);
-                        }
+                        basic_enemies_obstacle_collision(wall, &enemy[i]);
                         
                         for(int j = 0; j < TOTAL_FLOOR_SPLITS; ++j) {
                             basic_enemies_obstacle_collision(floor[j], &enemy[i]);
@@ -561,16 +553,10 @@ int main() {
 
                     //observa colisões envolvendo robôs
                     for(int i = 0; i < ENEMIES_ALIVE; i++) {
-
-                        //observa a colisão dos robôs com o chão
-                            robots_obstacle_collision(floor[0], &robot[i]);
-                            enemy_shot_obstacle_collision(floor[0], &robot[i].shot);
                         
                         //observa a colisão dos robôs e seus tiros com obstáculos
-                        for(int j = 0; j < 2; ++j) {
-                            robots_obstacle_collision(wall[j], &robot[i]);
-                            enemy_shot_obstacle_collision(wall[j], &robot[i].shot);
-                        }
+                        robots_obstacle_collision(wall, &robot[i]);
+                        enemy_shot_obstacle_collision(wall, &robot[i].shot);
 
                         //calcula a colisão dos robôs e seus tiros com a nave
                         for(int j = 0; j < TOTAL_SPACESHIPS; ++j) {
@@ -616,9 +602,7 @@ int main() {
 
                     //configura os robôs
                     for(int i = 0; i < ENEMIES_ALIVE; i++) {
-                        for(int j = 0; j < TOTAL_SPACESHIPS; ++j) {
-                            update_robot(&robot[i], spaceship[j], (al_get_timer_count(timer) % (int)(FPS*2)) == 0);
-                        }
+                        update_robot(&robot[i], spaceship[target_spaceship], (al_get_timer_count(timer) % (int)(FPS)) == 0);
                         update_enemy_shot(&robot[i].shot, 0);
                         draw_robot(robot[i], robot_sprite, timer, FPS);
                         draw_enemy_shot(robot[i].shot, enemy_shot_sprite);
@@ -630,18 +614,14 @@ int main() {
                     for(int i = 0; i < 2; i++) {
 
                         //calcula a colisão dos robôs de chão com a parede e a nave
-                        for(int j = 0; j < 2; ++j) {
-                            floor_robot_obstacle_collision(wall[j], &floor_robot[i]);
-                        }
+                        floor_robot_obstacle_collision(wall, &floor_robot[i]);
                         for(int j = 0; j < TOTAL_SPACESHIPS; ++j) {
                             spaceship_floor_robot_collision(&spaceship[j], &floor_robot[i]);
                         }
                         
                         //observa a colisão dos tiros de robôs de chão com obstáculos e a nave
                         for(int j = 0; j < FLOOR_ROBOT_TOTAL_SHOTS; ++j) {
-                            for(int k = 0; k < 2; ++k) {
-                                enemy_shot_obstacle_collision(wall[k], &floor_robot[i].shot[j]);
-                            }
+                            enemy_shot_obstacle_collision(wall, &floor_robot[i].shot[j]);
                             for(int k = 0; k < TOTAL_SPACESHIPS; ++k) {
                                 spaceship_enemy_shot_collision(&spaceship[k], &floor_robot[i].shot[j]);
                             }
@@ -687,18 +667,14 @@ int main() {
 
                     //atualiza os robôs de chão
                     for(int i = 0; i < TOTAL_FLOOR_ROBOTS; i++) {
-                        for(int j = 0; j < TOTAL_SPACESHIPS; ++j) {
-                            update_floor_robot(&floor_robot[i], spaceship[j], (al_get_timer_count(timer) % (int)(FPS*1) == 0));
-                        }
+                        update_floor_robot(&floor_robot[i], spaceship[target_spaceship], (al_get_timer_count(timer) % (int)(FPS*1) == 0));
                         draw_floor_robot(floor_robot[i], floor_robot_sprite, timer, FPS);
                     }
 
                     //============================================canhão============================================
 
-                    //calcula a colisão do canhão com a parede
-                    for(int i = 0; i < 2; ++i) {
-                        cannon_obstacle_collision(wall[i], &cannon);
-                    }
+                    //calcula a colisão do canhão com o chão
+                    cannon_obstacle_collision(floor[0], &cannon);
 
                     //calcula colisão da nave com o canhão e seus tiros
                     for(int i = 0; i < TOTAL_SPACESHIPS; ++i) {
@@ -718,9 +694,7 @@ int main() {
                     }
 
                     //atualiza o canhão
-                    for(int j = 0; j < TOTAL_SPACESHIPS; ++j) {
-                        update_cannon(&cannon, wall[rand() % 2], spaceship[j], (al_get_timer_count(timer) % (int)(FPS*3) == 0), cannon_shot_sfx);
-                    }
+                    update_cannon(&cannon, wall, spaceship[target_spaceship], (al_get_timer_count(timer) % (int)(FPS*2) == 0), cannon_shot_sfx);
                     draw_cannon(cannon, cannon_sprite);
                     
                     //============================================power up============================================
@@ -731,9 +705,7 @@ int main() {
                     }
 
                     //calcula colisão do power up com obstáculos
-                    for(int i = 0; i < 2; ++i) {
-                        power_up_obstacle_collision(&power_up, wall[i]);
-                    }
+                    power_up_obstacle_collision(&power_up, wall);
                     for(int i = 0; i < TOTAL_FLOOR_SPLITS; ++i) {
                         power_up_obstacle_collision(&power_up, floor[i]);
                     }
@@ -744,7 +716,6 @@ int main() {
     
                     //atualiza a tela (quando houver algo para mostrar)
                     al_flip_display();
-
                 }
 
                 if(ev.timer.source == timer2 && !pause) {
@@ -761,10 +732,7 @@ int main() {
                             }
                         }
                     }
-
                 }
-
-
                 break;
 
 
@@ -821,9 +789,9 @@ int main() {
                         break;
 
                     case ALLEGRO_KEY_M:
+                        if(!spaceship[0].lifes) break;
                         multiplayer = !multiplayer;
                         TOTAL_SPACESHIPS = multiplayer + 1;
-                        printf("\n%d %d", multiplayer, TOTAL_SPACESHIPS);
                         break;
 
                     // ao apertar espaço atira
@@ -1005,14 +973,13 @@ int main() {
                             break;
                         
                         case ALLEGRO_KEY_C:
-                            printf("\nInimigos vivos: %i", ENEMIES_ALIVE);
+                            // printf("\nInimigos vivos: %d", ENEMIES_ALIVE);
                             break;
                     }
                     break;
 
-            
+                }   
         }
-    }
 
     char string2[200];
     unsigned long long int god = 1000000;
@@ -1052,7 +1019,8 @@ int main() {
     al_destroy_bitmap(heart);
     al_destroy_bitmap(gasoline_sprite);
     al_destroy_bitmap(screwdriver_sprite);
-    al_destroy_bitmap(spaceship_sprite);
+    al_destroy_bitmap(spaceship1_sprite);
+    al_destroy_bitmap(spaceship2_sprite);
     al_destroy_bitmap(shot_sprite);
     al_destroy_bitmap(rshot_sprite);
     al_destroy_bitmap(supershot_sprite);

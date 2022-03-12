@@ -9,7 +9,7 @@ void init_spaceship(Spaceship *spaceship) {
     spaceship->border.x2 = spaceship->x;
     spaceship->border.y1 = spaceship->y - SPACESHIP_HEIGHT/2;
     spaceship->border.y2 = spaceship->y + SPACESHIP_HEIGHT/2;
-    spaceship->speed = 2;
+    spaceship->speed = 3;
     spaceship->lifes = 3;
     spaceship->damaged = 0;
     //0 = left 1 = right

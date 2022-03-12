@@ -9,11 +9,11 @@ void init_wall(Obstacle *wall) {
     int unities_per_screen_width = (int)(SCREEN_W / WALL_UNITY);
     int unities_per_screen_height_fraction = (int)((SCREEN_H) / WALL_UNITY);
 
-    wall->width = unities_per_screen_width * WALL_UNITY + WALL_UNITY * (rand() % (unities_per_screen_width * 3));
-    wall->height = 0.2 * unities_per_screen_height_fraction * WALL_UNITY + WALL_UNITY * (rand() % unities_per_screen_height_fraction * 0.2);
-    wall->coordenates.x1 = SCREEN_W*3 + rand() % (SCREEN_W*1);
+    wall->width = unities_per_screen_width * WALL_UNITY + WALL_UNITY * (rand() % (unities_per_screen_width * 1));
+    wall->height = (int)(0.2 * unities_per_screen_height_fraction) * WALL_UNITY + WALL_UNITY * (int)(rand() % unities_per_screen_height_fraction * 0.4);
+    wall->coordenates.x1 = SCREEN_W*1 + rand() % (SCREEN_W*2);
     wall->coordenates.x2 = wall->coordenates.x1 + wall->width;
-    wall->coordenates.y1 = SCREEN_BORDER_H + rand() % (int)(SCREEN_H - wall->height - FLOOR_HEIGHT + 10 ); 
+    wall->coordenates.y1 = SCREEN_BORDER_H + rand() % (int)(SCREEN_H - wall->height - FLOOR_HEIGHT - SCREEN_BORDER_H ); 
     wall->coordenates.y2 = wall->coordenates.y1 + wall->height;
 }
 

@@ -5,8 +5,8 @@
 
 #define PI 3.14159265358979323846
 
-#define SCREEN_H 768
-#define SCREEN_W 1124
+#define SCREEN_H 759
+#define SCREEN_W 1122
 
 #define SCREEN_BORDER_H 40
 
